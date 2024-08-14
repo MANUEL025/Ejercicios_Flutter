@@ -30,41 +30,79 @@ class _CalculadoraState extends State<Calculadora> {
   void _recargar() {
     final double recarga = double.tryParse(_recargaController.text) ?? 0.0;
     final double? minuto1 = double.tryParse(_minuto1Controller.text);
+    final double? minuto2 = double.tryParse(_minuto2Controller.text);
+    final double? minuto11 = double.tryParse(_minuto11Controller.text);
+
+    // Validar que los campos no sean nulos
+    if (minuto1 == null || minuto2 == null || minuto11 == null) {
+      _mostrarAlerta("Por favor, complete todos los campos.");
+      return;
+    }
+
+    // Validar que minuto1 sea mayor que minuto2
+    if (minuto1 <= minuto2) {
+      _mostrarAlerta("El Valor del Minuto 1 debe ser mayor que el Valor de Minuto 2.");
+      return;
+    }
+
+    // Validar que minuto2 sea mayor que minuto11
+    if (minuto2 <= minuto11) {
+      _mostrarAlerta("El Valor de Minuto 2 debe ser mayor que el Valor de Minuto 11.");
+      return;
+    }
+
+    // Validar que minuto2 y minuto11 no sean mayores que minuto1
+    if (minuto2 > minuto1 || minuto11 > minuto1) {
+      _mostrarAlerta("Los valores de los minutos no pueden ser mayores que el Valor del Minuto 1.");
+      return;
+    }
 
     _saldo += recarga;
     _minutos = 0;
     _saldoInsuficiente = false;
 
-    if (minuto1 != null && _saldo < minuto1) {
+    if (_saldo < minuto1) {
       // Si el saldo después de la recarga es menor que el Valor del minuto 1
       setState(() {
         _saldoInsuficiente = true;
       });
     } else {
-      final double? minuto2 = double.tryParse(_minuto2Controller.text);
-      final double? minuto11 = double.tryParse(_minuto11Controller.text);
+      // Si todos los Valors de minutos están definidos, realizamos la operación.
+      _saldo -= minuto1;
+      _minutos = 1;
 
-      if (minuto1 == null || minuto2 == null || minuto11 == null) {
-        // Si alguno de los minutos no está definido, solo recargamos el saldo.
-        setState(() {});
-      } else {
-        // Si todos los Valors de minutos están definidos, realizamos la operación.
-        _saldo -= minuto1!;
-        _minutos = 1;
-
-        for (int i = 2; i <= 10 && _saldo >= minuto2!; i++) {
-          _saldo -= minuto2;
-          _minutos++;
-        }
-
-        while (_saldo >= minuto11!) {
-          _saldo -= minuto11;
-          _minutos++;
-        }
-
-        setState(() {});
+      for (int i = 2; i <= 10 && _saldo >= minuto2; i++) {
+        _saldo -= minuto2;
+        _minutos++;
       }
+
+      while (_saldo >= minuto11) {
+        _saldo -= minuto11;
+        _minutos++;
+      }
+
+      setState(() {});
     }
+  }
+
+  void _mostrarAlerta(String mensaje) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Advertencia'),
+          content: Text(mensaje),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -97,9 +135,15 @@ class _CalculadoraState extends State<Calculadora> {
           const SizedBox(height: 20),
           saldo(),
           const SizedBox(height: 20),
-          minuto1(),
-          const SizedBox(height: 20),
-          minuto2(),
+          // Usamos Row para organizar los campos de minutos
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(child: minuto1()),
+              const SizedBox(width: 10), // Espaciado entre los campos
+              Expanded(child: minuto2()),
+            ],
+          ),
           const SizedBox(height: 20),
           minuto11(),
           const SizedBox(height: 20),
